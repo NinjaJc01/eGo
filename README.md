@@ -16,3 +16,4 @@ https://golang.org/
   \*NIX ```| grep e```  
   Powershell ```| Select-String e```  
   CMD ```| find "e"```  
+  1. New: try -hard as a flag, sets the iterations and precision higher to give your CPU a workout! Overrides any set precision or iterations!
