@@ -1,31 +1,40 @@
 package main
+
 import (
-	"github.com/ericlagergren/decimal"
-	"fmt"
 	"flag"
+	"fmt"
 	"time"
+
+	"github.com/ericlagergren/decimal"
 )
+
 var (
-	precision int
+	precision  int
 	iterations uint64
-	channel chan *decimal.Big
+	hard       bool
+	channel    chan *decimal.Big
 )
 
 func main() {
-	start := time.Now()
 	precPtr := flag.Int("p", 10001, "Precision for calculations")
 	iterPtr := flag.Uint64("i", 1625, "Value of infinity")
+	hard := flag.Bool("hard", false, "Stress your hardware more, more iterations! Forces set iterations and precison, overiding any set.")
 	flag.Parse()
 	precision = *precPtr
 	iterations = *iterPtr
+	if *hard {
+		iterations = 4288
+		precision = 30001
+	}
+	start := time.Now()
 	channel = make(chan *decimal.Big, iterations)
 	//go series(0,*iterPtr)
 	var answer = decimal.WithPrecision(precision).SetUint64(0)
 	for i := uint64(1); i < iterations; i++ {
-		go series(i-1,i)
+		go series(i-1, i)
 	}
 	for counter := uint64(0); counter < iterations-1; counter++ {
-		answer = answer.Add(<- channel, answer)
+		answer = answer.Add(<-channel, answer)
 		//fmt.Print(".")
 		//time.Sleep(time.Millisecond*5)
 	}
@@ -35,9 +44,9 @@ func main() {
 	fmt.Println(time.Now().Sub(start))
 }
 func series(lower, upper uint64) {
-	var res  = decimal.WithPrecision(precision).SetUint64(0)
+	var res = decimal.WithPrecision(precision).SetUint64(0)
 	for n := lower; n < upper; n++ {
-		add := decimal.WithPrecision(precision).SetUint64(((2*n)+2))
+		add := decimal.WithPrecision(precision).SetUint64(((2 * n) + 2))
 		add.Quo(add, factorial((2*n)+1))
 		res.Add(res, add)
 	}
@@ -48,7 +57,7 @@ func factorial(x uint64) (fact *decimal.Big) {
 	fact = decimal.WithPrecision(precision).SetUint64(1)
 	//fmt.Println("Prec",fact.Precision())
 	for i := x; i > 0; i-- {
-		fact.Mul(fact, decimal.New((int64(i)),0))
+		fact.Mul(fact, decimal.New((int64(i)), 0))
 	}
 	//fmt.Println("ActualPrec:",fact.Precision())
 	return
