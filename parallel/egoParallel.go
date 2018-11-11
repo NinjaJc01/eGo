@@ -58,7 +58,7 @@ func main() {
 		logger.Println(answer)
 		logger.Printf("\nRun Time: %v\n", time.Now().Sub(start))
 	}
-	// Print result to console
+	// Print running time to console
 	fmt.Printf("Run Time: %v\n", time.Now().Sub(start))
 
 }
