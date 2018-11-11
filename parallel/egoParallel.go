@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/ericlagergren/decimal"
@@ -16,6 +18,16 @@ var (
 )
 
 func main() {
+	// Logger
+	f, err := os.OpenFile("log.txt",
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	logger := log.New(f, "eGoDecimal", log.LstdFlags)
+
+	// Iterations
 	precPtr := flag.Int("p", 10001, "Precision for calculations")
 	iterPtr := flag.Uint64("i", 1625, "Value of infinity")
 	hard := flag.Bool("hard", false, "Stress your hardware more, more iterations! Forces set iterations and precison, overiding any set.")
@@ -38,10 +50,14 @@ func main() {
 		//fmt.Print(".")
 		//time.Sleep(time.Millisecond*5)
 	}
-	fmt.Println()
-	fmt.Println(answer)
-	fmt.Print("Time: ")
-	fmt.Println(time.Now().Sub(start))
+
+	// Logging
+	logger.Println(answer)
+	logger.Printf("\nRun Time: %v\n", time.Now().Sub(start))
+
+	// Print result to console
+	fmt.Printf("Run Time: %v\n", time.Now().Sub(start))
+
 }
 func series(lower, upper uint64) {
 	var res = decimal.WithPrecision(precision).SetUint64(0)
