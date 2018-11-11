@@ -18,6 +18,13 @@ var (
 )
 
 func main() {
+	// Options
+	precPtr := flag.Int("p", 10001, "Precision for calculations")
+	iterPtr := flag.Uint64("i", 1625, "Value of infinity")
+	hard := flag.Bool("hard", false, "Stress your hardware more, more iterations! Forces set iterations and precison, overiding any set.")
+	debug := flag.Bool("debug", false, "Used for debugging. This will write to log.txt")
+	flag.Parse()
+
 	// Logger
 	f, err := os.OpenFile("log.txt",
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -25,13 +32,9 @@ func main() {
 		log.Println(err)
 	}
 	defer f.Close()
-	logger := log.New(f, "eGoDecimal", log.LstdFlags)
+	logger := log.New(f, "eGoDecimal ", log.LstdFlags)
 
 	// Iterations
-	precPtr := flag.Int("p", 10001, "Precision for calculations")
-	iterPtr := flag.Uint64("i", 1625, "Value of infinity")
-	hard := flag.Bool("hard", false, "Stress your hardware more, more iterations! Forces set iterations and precison, overiding any set.")
-	flag.Parse()
 	precision = *precPtr
 	iterations = *iterPtr
 	if *hard {
@@ -40,7 +43,7 @@ func main() {
 	}
 	start := time.Now()
 	channel = make(chan *decimal.Big, iterations)
-	//go series(0,*iterPtr)
+	//go series(0, *iterPtr)
 	var answer = decimal.WithPrecision(precision).SetUint64(0)
 	for i := uint64(1); i < iterations; i++ {
 		go series(i-1, i)
@@ -52,10 +55,13 @@ func main() {
 	}
 
 	// Logging
-	logger.Println(answer)
-	logger.Printf("\nRun Time: %v\n", time.Now().Sub(start))
+	if *debug {
+		logger.Println(answer)
+		logger.Printf("\nRun Time: %v\n", time.Now().Sub(start))
+	}
 
-	// Print result to console
+	// Print result to console and write to log
+	logger.Printf("\nRun Time: %v\n", time.Now().Sub(start))
 	fmt.Printf("Run Time: %v\n", time.Now().Sub(start))
 
 }
