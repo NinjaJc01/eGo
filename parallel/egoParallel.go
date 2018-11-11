@@ -25,15 +25,6 @@ func main() {
 	debug := flag.Bool("debug", false, "Used for debugging. This will write to log.txt")
 	flag.Parse()
 
-	// Logger
-	f, err := os.OpenFile("log.txt",
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	logger := log.New(f, "eGoDecimal ", log.LstdFlags)
-
 	// Iterations
 	precision = *precPtr
 	iterations = *iterPtr
@@ -54,14 +45,20 @@ func main() {
 		//time.Sleep(time.Millisecond*5)
 	}
 
-	// Logging
+	// Logging. Only creates log.txt with -debug option
 	if *debug {
+		f, err := os.OpenFile("log.txt",
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Println(err)
+		}
+		defer f.Close()
+		logger := log.New(f, "eGoDecimal ", log.LstdFlags)
+		// Add things to log for debug here
 		logger.Println(answer)
 		logger.Printf("\nRun Time: %v\n", time.Now().Sub(start))
 	}
-
-	// Print result to console and write to log
-	logger.Printf("\nRun Time: %v\n", time.Now().Sub(start))
+	// Print running time to console
 	fmt.Printf("Run Time: %v\n", time.Now().Sub(start))
 
 }
