@@ -36,10 +36,10 @@ func main() {
 	channel = make(chan *decimal.Big, iterations)
 	//go series(0, *iterPtr)
 	var answer = decimal.WithPrecision(precision).SetUint64(0)
-	for i := uint64(1); i < iterations; i++ {
-		go series(i-1, i)
+	for i := uint64(0); i <= iterations; i+=  8 {
+		go series(i, i+  8)
 	}
-	for counter := uint64(0); counter < iterations-1; counter++ {
+	for counter := uint64(0); counter <= iterations; counter+=  8 {
 		answer = answer.Add(<-channel, answer)
 		//fmt.Print(".")
 		//time.Sleep(time.Millisecond*5)
