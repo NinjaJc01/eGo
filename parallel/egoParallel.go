@@ -25,7 +25,7 @@ func main() {
 	// Options
 	precPtr := flag.Int("p", 10001, "Precision for calculations")
 	iterPtr := flag.Uint64("i", 1625, "Value of infinity")
-	increment = *flag.Uint64("increment", 8, "increment size")
+	increment = *flag.Uint64("increment", 64, "increment size")
 	hard := flag.Bool("hard", false, "Stress your hardware more, more iterations! Forces set iterations and precison, overiding any set.")
 	debug := flag.Bool("debug", false, "Used for debugging. This will write to log.txt")
 	flag.Parse()
