@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"time"
+	"sync"
 
 	"github.com/ericlagergren/decimal"
 )
@@ -16,6 +17,8 @@ var (
 	increment uint64
 	hard       bool
 	channel    chan *decimal.Big
+	factorial_buf  []*decimal.Big
+	wg sync.WaitGroup
 )
 
 func main() {
@@ -37,16 +40,45 @@ func main() {
 	start := time.Now()
 	channel = make(chan *decimal.Big, iterations)
 	var answer = decimal.WithPrecision(precision).SetUint64(0)
+	factorial_buf = make([]*decimal.Big, 2*(iterations+1),2*(iterations+1))
+	factorial_buf[0] = decimal.WithPrecision(precision).SetUint64(1)
+
 	var iteration_overflow uint64 = iterations%increment
 	iterations -= iteration_overflow
+
+	for i := uint64(1); i < 2*(iterations); i += increment {
+		wg.Add(1)
+		go calc_factorial1(i,i + increment)
+	}
+	wg.Add(1)
+	go calc_factorial1(2*iterations+1,2*(iterations+iteration_overflow+1))
+	wg.Wait()
+
+	if increment != 1 {
+		for i := uint64(1); i < 2*(iterations); i+= increment {
+			factorial_buf[i+increment-1].Mul(factorial_buf[i-1],factorial_buf[i+increment-1])
+			wg.Add(1)
+			go calc_factorial2(i,i+ increment-1)
+		}
+		wg.Add(1)
+		go calc_factorial2(2*iterations+1,2*(iterations+iteration_overflow+1))
+		wg.Wait()
+	} else {
+		for i := uint64(1); i < 2*(iterations); i++ {
+			factorial_buf[i].Mul(factorial_buf[i-1],factorial_buf[i])
+		}
+	}
+
 	for i := uint64(0); i < iterations; i+= increment {
 		go series(i, i+ increment)
 	}
 	go series(iterations, iterations+iteration_overflow)
+
 	for counter := uint64(0); counter < iterations; counter+= increment {
 		answer = answer.Add(<-channel, answer)
 	}
 	answer = answer.Add(<-channel, answer)
+
 	end := time.Now()
 
 	// Logging. Only creates log.txt with -debug option
@@ -66,20 +98,29 @@ func main() {
 	fmt.Printf("Run Time: %vs\n", end.Sub(start).Seconds())
 
 }
+
+func calc_factorial1(lower, upper uint64) {
+	defer wg.Done()
+	factorial_buf[lower] = decimal.WithPrecision(precision).SetUint64(lower)
+	for i := lower+1; i < upper; i++ {
+		factorial_buf[i] = decimal.WithPrecision(precision).SetUint64(i)
+		factorial_buf[i].Mul(factorial_buf[i-1],factorial_buf[i])
+	}
+}
+
+func calc_factorial2(lower, upper uint64) {
+	defer wg.Done()
+	for i := lower; i < upper; i++ {
+		factorial_buf[i].Mul(factorial_buf[lower-1],factorial_buf[i])
+	}
+}
+
 func series(lower, upper uint64) {
 	var res = decimal.WithPrecision(precision).SetUint64(0)
 	for n := lower; n < upper; n++ {
 		add := decimal.WithPrecision(precision).SetUint64(((2 * n) + 2))
-		add.Quo(add, factorial((2*n)+1))
+		add.Quo(add, factorial_buf[(2*n)+1])
 		res.Add(res, add)
 	}
 	channel <- res
-}
-
-func factorial(x uint64) (fact *decimal.Big) {
-	fact = decimal.WithPrecision(precision).SetUint64(1)
-	for i := x; i > 0; i-- {
-		fact.Mul(fact, decimal.New((int64(i)), 0))
-	}
-	return
 }
