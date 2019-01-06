@@ -13,6 +13,7 @@ import (
 var (
 	precision  int
 	iterations uint64
+	increment uint64
 	hard       bool
 	channel    chan *decimal.Big
 )
@@ -21,6 +22,7 @@ func main() {
 	// Options
 	precPtr := flag.Int("p", 10001, "Precision for calculations")
 	iterPtr := flag.Uint64("i", 1625, "Value of infinity")
+	increment = *flag.Uint64("increment", 8, "increment size")
 	hard := flag.Bool("hard", false, "Stress your hardware more, more iterations! Forces set iterations and precison, overiding any set.")
 	debug := flag.Bool("debug", false, "Used for debugging. This will write to log.txt")
 	flag.Parse()
@@ -36,14 +38,18 @@ func main() {
 	channel = make(chan *decimal.Big, iterations)
 	//go series(0, *iterPtr)
 	var answer = decimal.WithPrecision(precision).SetUint64(0)
-	for i := uint64(0); i <= iterations; i+=  8 {
-		go series(i, i+  8)
+	var iteration_overflow uint64 = iterations%increment
+	iterations -= iteration_overflow
+	for i := uint64(0); i < iterations; i+= increment {
+		go series(i, i+ increment)
 	}
-	for counter := uint64(0); counter <= iterations; counter+=  8 {
+	go series(iterations, iterations+iteration_overflow)
+	for counter := uint64(0); counter < iterations; counter+= increment {
 		answer = answer.Add(<-channel, answer)
 		//fmt.Print(".")
 		//time.Sleep(time.Millisecond*5)
 	}
+	answer = answer.Add(<-channel, answer)
 
 	// Logging. Only creates log.txt with -debug option
 	if *debug {
