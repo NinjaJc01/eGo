@@ -12,4 +12,5 @@ https://golang.org/
   ```GOARCH=arm64 GOOS=linux go build ./parallel/egoParallel.go```  
   Would build for arm64, linux (raspi etc, sometimes you may need just arm)  
   See entries in bold for supported OS and Architectures out of the box: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63  
-  1. New: try -hard as a flag, sets the iterations and precision higher to give your CPU a workout! Overrides any set precision or iterations!
+  
+New: try -hard as a flag, sets the iterations and precision higher to give your CPU a workout! Overrides any set precision or iterations!
