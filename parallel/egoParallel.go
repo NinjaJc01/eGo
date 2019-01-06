@@ -36,7 +36,6 @@ func main() {
 	}
 	start := time.Now()
 	channel = make(chan *decimal.Big, iterations)
-	//go series(0, *iterPtr)
 	var answer = decimal.WithPrecision(precision).SetUint64(0)
 	var iteration_overflow uint64 = iterations%increment
 	iterations -= iteration_overflow
@@ -46,10 +45,9 @@ func main() {
 	go series(iterations, iterations+iteration_overflow)
 	for counter := uint64(0); counter < iterations; counter+= increment {
 		answer = answer.Add(<-channel, answer)
-		//fmt.Print(".")
-		//time.Sleep(time.Millisecond*5)
 	}
 	answer = answer.Add(<-channel, answer)
+	end := time.Now()
 
 	// Logging. Only creates log.txt with -debug option
 	if *debug {
@@ -62,10 +60,10 @@ func main() {
 		logger := log.New(f, "eGoDecimal ", log.LstdFlags)
 		// Add things to log for debug here
 		logger.Println(answer)
-		logger.Printf("\nRun Time: %v\n", time.Now().Sub(start))
+		logger.Printf("Run Time: %vs\n", end.Sub(start).Seconds())
 	}
 	// Print running time to console
-	fmt.Printf("Run Time: %v\n", time.Now().Sub(start))
+	fmt.Printf("Run Time: %vs\n", end.Sub(start).Seconds())
 
 }
 func series(lower, upper uint64) {
@@ -80,10 +78,8 @@ func series(lower, upper uint64) {
 
 func factorial(x uint64) (fact *decimal.Big) {
 	fact = decimal.WithPrecision(precision).SetUint64(1)
-	//fmt.Println("Prec",fact.Precision())
 	for i := x; i > 0; i-- {
 		fact.Mul(fact, decimal.New((int64(i)), 0))
 	}
-	//fmt.Println("ActualPrec:",fact.Precision())
 	return
 }
