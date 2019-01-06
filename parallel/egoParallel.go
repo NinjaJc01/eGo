@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"time"
-	"sync"
+	"sync"	//WaitGroup for thread synchronization
 
 	"github.com/ericlagergren/decimal"
 )
@@ -17,8 +17,8 @@ var (
 	increment uint64
 	hard       bool
 	channel    chan *decimal.Big
-	factorial_buf  []*decimal.Big
-	wg sync.WaitGroup
+	factorial_buf  []*decimal.Big	//store all needed factorials
+	wg sync.WaitGroup	//synchronize factorial calculation threads
 )
 
 func main() {
@@ -46,6 +46,7 @@ func main() {
 	var iteration_overflow uint64 = iterations%increment
 	iterations -= iteration_overflow
 
+	//calc_factorial1 sets values of factorial_buf[i] = i!/(lower-1)! by calculating partial product
 	for i := uint64(1); i < 2*(iterations); i += increment {
 		wg.Add(1)
 		go calc_factorial1(i,i + increment)
@@ -54,6 +55,9 @@ func main() {
 	go calc_factorial1(2*iterations+1,2*(iterations+iteration_overflow+1))
 	wg.Wait()
 
+	//calc_factorial2 sets values of factorial_buf[i] = i! by multiplying by the precalculated value
+	//the last value in each series must be pre-propagated to ensure the next series is correct
+	//increment 1 is a special case as no parallel work can be completed
 	if increment != 1 {
 		for i := uint64(1); i < 2*(iterations); i+= increment {
 			factorial_buf[i+increment-1].Mul(factorial_buf[i-1],factorial_buf[i+increment-1])
@@ -69,11 +73,13 @@ func main() {
 		}
 	}
 
+	//calculate partial sums of e
 	for i := uint64(0); i < iterations; i+= increment {
 		go series(i, i+ increment)
 	}
 	go series(iterations, iterations+iteration_overflow)
 
+	//finish adding the sum
 	for counter := uint64(0); counter < iterations; counter+= increment {
 		answer = answer.Add(<-channel, answer)
 	}
@@ -99,6 +105,7 @@ func main() {
 
 }
 
+//set values of factorial_buf[i] = i!/(lower-1)! by calculating partial product (lower*(lower+1)...*upper)
 func calc_factorial1(lower, upper uint64) {
 	defer wg.Done()
 	factorial_buf[lower] = decimal.WithPrecision(precision).SetUint64(lower)
@@ -108,6 +115,7 @@ func calc_factorial1(lower, upper uint64) {
 	}
 }
 
+//finishes calculating factorial_buf[i] = i! by multiplying by the precalculated (lower-1)!
 func calc_factorial2(lower, upper uint64) {
 	defer wg.Done()
 	for i := lower; i < upper; i++ {
@@ -115,6 +123,7 @@ func calc_factorial2(lower, upper uint64) {
 	}
 }
 
+//partial sum of e
 func series(lower, upper uint64) {
 	var res = decimal.WithPrecision(precision).SetUint64(0)
 	for n := lower; n < upper; n++ {
