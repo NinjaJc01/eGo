@@ -92,7 +92,7 @@ func main() {
 		logger := log.New(f, "eGoDecimal ", log.LstdFlags)
 		// Add things to log for debug here
 		logger.Println(answer)
-		logger.Printf("Run Time: %vs\n", end.Sub(start).Seconds())
+		logger.Printf("\nRun Time: %vs\n", end.Sub(start).Seconds())
 	}
 	// Print running time to console
 	fmt.Printf("Run Time: %vs\n", end.Sub(start).Seconds())
