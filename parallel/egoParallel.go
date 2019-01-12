@@ -46,26 +46,26 @@ func main() {
 	var iteration_overflow uint64 = iterations%increment
 	iterations -= iteration_overflow
 
-	//calc_factorial1 sets values of factorial_buf[i] = i!/(lower-1)! by calculating partial product
+	//factorial_initialize sets values of factorial_buf[i] = i!/(lower-1)! by calculating partial product
 	for i := uint64(1); i < 2*(iterations); i += increment {
 		wg.Add(1)
-		go calc_factorial1(i,i + increment)
+		go factorial_initialize(i,i + increment)
 	}
 	wg.Add(1)
-	go calc_factorial1(2*iterations+1,2*(iterations+iteration_overflow+1))
+	go factorial_initialize(2*iterations+1,2*(iterations+iteration_overflow+1))
 	wg.Wait()
 
-	//calc_factorial2 sets values of factorial_buf[i] = i! by multiplying by the precalculated value
+	//factorial_calc_final sets values of factorial_buf[i] = i! by multiplying by the precalculated value
 	//the last value in each series must be pre-propagated to ensure the next series is correct
 	//increment 1 is a special case as no parallel work can be completed
 	if increment != 1 {
 		for i := uint64(1); i < 2*(iterations); i+= increment {
 			factorial_buf[i+increment-1].Mul(factorial_buf[i-1],factorial_buf[i+increment-1])
 			wg.Add(1)
-			go calc_factorial2(i,i+ increment-1)
+			go factorial_calc_final(i,i+ increment-1)
 		}
 		wg.Add(1)
-		go calc_factorial2(2*iterations+1,2*(iterations+iteration_overflow+1))
+		go factorial_calc_final(2*iterations+1,2*(iterations+iteration_overflow+1))
 		wg.Wait()
 	} else {
 		for i := uint64(1); i < 2*(iterations); i++ {
@@ -106,7 +106,7 @@ func main() {
 }
 
 //set values of factorial_buf[i] = i!/(lower-1)! by calculating partial product (lower*(lower+1)...*upper)
-func calc_factorial1(lower, upper uint64) {
+func factorial_initialize(lower, upper uint64) {
 	defer wg.Done()
 	factorial_buf[lower] = decimal.WithPrecision(precision).SetUint64(lower)
 	for i := lower+1; i < upper; i++ {
@@ -116,7 +116,7 @@ func calc_factorial1(lower, upper uint64) {
 }
 
 //finishes calculating factorial_buf[i] = i! by multiplying by the precalculated (lower-1)!
-func calc_factorial2(lower, upper uint64) {
+func factorial_calc_final(lower, upper uint64) {
 	defer wg.Done()
 	for i := lower; i < upper; i++ {
 		factorial_buf[i].Mul(factorial_buf[lower-1],factorial_buf[i])
